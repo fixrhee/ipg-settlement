@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+
+	<flow name="phase02_Flow">
+		<vm:inbound-endpoint path="phase2" doc:name="VM" />
+		<logger level="INFO" message="[PHASE-02: #[payload]]" doc:name="Logger" />
+		<set-variable value="#[payload]" variableName="originalPayload"
+			doc:name="Variable" />
+		<db:stored-procedure config-ref="MySQL_Configuration"
+			doc:name="Database" queryTimeout="60000">
+			<db:parameterized-query><![CDATA[CALL transferSettlement(:trxNo,:trfTypeID);]]></db:parameterized-query>
+			<db:in-param name="trxNo" value="#[payload.transaction_number]" />
+			<db:in-param name="trfTypeID" value="#[payload.transfer_type_id]" />
+		</db:stored-procedure>
+		<logger level="INFO"
+			message="[PHASE-02 Update #[flowVars['originalPayload'].transaction_number] : #[payload]]"
+			doc:name="Logger" />
+		<choice doc:name="Choice">
+			<when expression="#[payload != 0]">
+				<set-payload value="#[flowVars['originalPayload']]"
+					doc:name="Set Payload" />
+				<vm:outbound-endpoint path="phase3" doc:name="VM" />
+			</when>
+			<otherwise>
+				<logger level="WARN" message="[NOTHING to Update, skipping PHASE-03]"
+					doc:name="Logger" />
+			</otherwise>
+		</choice>
+	</flow>
+
+</mule>
