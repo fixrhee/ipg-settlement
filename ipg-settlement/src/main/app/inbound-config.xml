@@ -7,8 +7,8 @@
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
-	<db:mysql-config name="MySQL_Configuration" url="${database.url}" user="optima" password="optima123"
-		doc:name="MySQL Configuration" />
+	<db:mysql-config name="MySQL_Configuration" url="${database.url}"
+		user="optima" password="optima123" doc:name="MySQL Configuration" />
 	<flow name="inbound-configFlow">
 		<jms:inbound-endpoint connector-ref="Active_MQ"
 			queue="ipg.settlement" doc:name="JMS" />

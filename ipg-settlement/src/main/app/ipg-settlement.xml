@@ -5,14 +5,46 @@
 	xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd">
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
 
 	<context:property-placeholder location="${mule.env}.properties" />
-	
+
+
+	<spring:beans>
+		<context:component-scan base-package="org.ipg.batch.process" />
+		<tx:annotation-driven proxy-target-class="true"
+			transaction-manager="transactionManager" />
+		<spring:bean id="Phase02ServiceImpl" class="org.ipg.batch.process.BatchProcessor" />
+		<spring:bean id="transactionManager"
+			class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<spring:property name="dataSource" ref="dataSource" />
+		</spring:bean>
+
+		<spring:bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+			<spring:property name="poolName" value="springHikariCP" />
+			<spring:property name="driverClassName" value="com.mysql.jdbc.Driver" />
+			<spring:property name="connectionTestQuery" value="SELECT 1" />
+			<spring:property name="jdbcUrl" value="${database.url}" />
+			<spring:property name="dataSourceProperties">
+				<spring:props>
+					<spring:prop key="user">root</spring:prop>
+					<spring:prop key="password">telefunken12AX7</spring:prop>
+				</spring:props>
+			</spring:property>
+		</spring:bean>
+
+		<spring:bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
+			<spring:constructor-arg ref="hikariConfig" />
+		</spring:bean>
+	</spring:beans>
+
+
 	<jms:activemq-connector name="Active_MQ"
 		specification="1.1" brokerURL="${notification.jms.broker.url}"
 		disableTemporaryReplyToDestinations="true" validateConnections="true"
@@ -23,8 +55,8 @@ http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/q
 
 	<flow name="trigger_Flow">
 		<quartz:inbound-endpoint jobName="triggerJob"
-			cronExpression="0 0 1 * * ?" repeatInterval="0"
-			responseTimeout="10000" connector-ref="Quartz" doc:name="Quartz">
+			cronExpression="0 0 1 * * ?" repeatInterval="0" responseTimeout="10000"
+			connector-ref="Quartz" doc:name="Quartz">
 			<quartz:event-generator-job>
 				<quartz:payload>START</quartz:payload>
 			</quartz:event-generator-job>

@@ -12,17 +12,21 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
 
+
 	<flow name="phase02_Flow">
 		<vm:inbound-endpoint path="phase2" doc:name="VM" />
 		<logger level="INFO" message="[PHASE-02: #[payload]]" doc:name="Logger" />
 		<set-variable value="#[payload]" variableName="originalPayload"
 			doc:name="Variable" />
-		<db:stored-procedure config-ref="MySQL_Configuration"
-			doc:name="Database" queryTimeout="60000">
-			<db:parameterized-query><![CDATA[CALL transferSettlement(:trxNo,:trfTypeID);]]></db:parameterized-query>
-			<db:in-param name="trxNo" value="#[payload.transaction_number]" />
-			<db:in-param name="trfTypeID" value="#[payload.transfer_type_id]" />
-		</db:stored-procedure>
+
+		<invoke object-ref="Phase02ServiceImpl" method="updateTransfers"
+			methodArguments="#[payload.transaction_number], #[payload.transfer_type_id]" />
+
+		<!-- db:stored-procedure config-ref="MySQL_Configuration" doc:name="Database" 
+			queryTimeout="60000"> <db:parameterized-query><![CDATA[CALL transferSettlement(:trxNo,:trfTypeID);]]></db:parameterized-query> 
+			<db:in-param name="trxNo" value="#[payload.transaction_number]" /> <db:in-param 
+			name="trfTypeID" value="#[payload.transfer_type_id]" /> </db:stored-procedure -->
+
 		<logger level="INFO"
 			message="[PHASE-02 Update #[flowVars['originalPayload'].transaction_number] : #[payload]]"
 			doc:name="Logger" />
